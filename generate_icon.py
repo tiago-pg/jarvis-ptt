@@ -29,10 +29,6 @@ def _create_png(width: int, height: int) -> bytes:
             else:
                 row.extend([0, 0, 0, 0])
         pixels.append(0)
-        row = bytearray(row)
-        # RGBA -> BGRA pra corresponder ao alpha
-        for i in range(0, len(row), 4):
-            row[i], row[i+2] = row[i+2], row[i]
         pixels.extend(row)
 
     def chunk(chunk_type: bytes, data: bytes) -> bytes:
@@ -48,29 +44,26 @@ def _create_png(width: int, height: int) -> bytes:
 
 
 def main():
-    sizes = {
-        16: "icon_16x16.png",
-        32: "icon_16x16@2x.png",
-        32: "icon_32x32.png",
-        64: "icon_32x32@2x.png",
-        128: "icon_128x128.png",
-        256: "icon_128x128@2x.png",
-        256: "icon_256x256.png",
-        512: "icon_256x256@2x.png",
-        512: "icon_512x512.png",
-        1024: "icon_512x512@2x.png",
-    }
+    sizes = [
+        (16, "icon_16x16.png"),
+        (32, "icon_16x16@2x.png"),
+        (32, "icon_32x32.png"),
+        (64, "icon_32x32@2x.png"),
+        (128, "icon_128x128.png"),
+        (256, "icon_128x128@2x.png"),
+        (256, "icon_256x256.png"),
+        (512, "icon_256x256@2x.png"),
+        (512, "icon_512x512.png"),
+        (1024, "icon_512x512@2x.png"),
+    ]
 
     iconset = HERE / "Jarvis.iconset"
     iconset.mkdir(exist_ok=True)
 
-    seen = {}
-    for size, name in sizes.items():
-        if name not in seen:
-            seen[name] = size
-            png_data = _create_png(size, size)
-            (iconset / name).write_bytes(png_data)
-            print(f"  Criado {name} ({size}x{size})")
+    for size, name in sizes:
+        png_data = _create_png(size, size)
+        (iconset / name).write_bytes(png_data)
+        print(f"  Criado {name} ({size}x{size})")
 
     menu_icon = _create_png(32, 32)
     (HERE / "jarvis_icon.png").write_bytes(menu_icon)
