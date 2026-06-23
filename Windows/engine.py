@@ -142,18 +142,8 @@ class JarvisEngine:
         self._set_status("parado")
 
     def _init_wakeword(self):
-        try:
-            from openwakeword.model import Model
-            self._oww_model = Model(
-                wakeword_models=["hey_jarvis"],
-                inference_framework="onnx",
-                enable_speex_noise_suppression=False,
-            )
-            print(f"[WakeWord] OpenWakeWord + VAD (dupla deteccao)")
-        except Exception as exc:
-            print(f"[WakeWord] {exc}")
-            print(f"[WakeWord] Usando VAD + Groq")
-            self._oww_model = None
+        print(f"[WakeWord] VAD + Groq Whisper")
+        self._oww_model = None
 
     def _audio_loop(self):
         self._stream = sd.InputStream(
@@ -204,25 +194,6 @@ class JarvisEngine:
             self._pre_roll.append(mono.copy())
 
             now = time.time()
-
-            if self._oww_model:
-                self._oww_buffer = np.concatenate([self._oww_buffer, mono.astype(np.float64)])
-                buf_len = len(self._oww_buffer)
-                if buf_len >= 1280:
-                    chunk = self._oww_buffer[:1280].copy()
-                    self._oww_buffer = self._oww_buffer[1280:]
-                    try:
-                        pred = self._oww_model.predict(chunk)
-                        score = pred.get("hey_jarvis", 0)
-                        print(f"[OWW] score: {score:.4f} | buf: {buf_len}", flush=True)
-                        if score >= 0.2:
-                            print(f"[WakeWord] Jarvis detectado! (score: {score:.2f})")
-                            self._on_wake_detected()
-                            self._oww_buffer = np.array([], dtype=np.float64)
-                            return
-                    except Exception as e:
-                        print(f"[OWW] ERRO: {e}", flush=True)
-                return
 
             if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
                 print(f"[VAD] Fala detectada (rms: {rms:.4f})")
