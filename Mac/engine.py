@@ -301,11 +301,18 @@ class JarvisEngine:
             is_command = True
         else:
             lower = text.strip().lower()
-            for w in ("jarvis", "hey jarvis", "jarves", "jervis"):
+            wake_words = [
+                "jarvis", "hey jarvis", "ei jarvis", "hey jarvis", "ei járvis",
+                "jarves", "jervis", "járvis", "harvis", "djárvis",
+                "hey", "ei",
+            ]
+            for w in sorted(wake_words, key=len, reverse=True):
                 if lower.startswith(w):
-                    text = text[len(w):].strip().lstrip(",:!.- ")
-                    is_command = True
-                    break
+                    rest = text[len(w):].strip().lstrip(",:!.- ")
+                    if rest:
+                        text = rest
+                        is_command = True
+                        break
 
         if not is_command:
             self._set_status("ouvindo")
