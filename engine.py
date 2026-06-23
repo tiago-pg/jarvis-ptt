@@ -252,9 +252,9 @@ class JarvisEngine:
     def _on_wake_detected(self):
         self._wake_detected = True
         self._recording = True
-        self._audio_buffer.clear()
+        self._audio_buffer = list(self._pre_roll)
         self._silence_chunks = 0
-        self._record_chunks = 0
+        self._record_chunks = len(self._audio_buffer)
         self._set_status("gravando")
         WAKE_SOUND.play()
 
