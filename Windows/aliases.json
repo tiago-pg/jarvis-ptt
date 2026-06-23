@@ -1,0 +1,37 @@
+{
+  "app_aliases": {
+    "vscode": "Code",
+    "vs code": "Code",
+    "code": "Code",
+    "chrome": "chrome",
+    "navegador": "chrome",
+    "browser": "chrome",
+    "edge": "msedge",
+    "firefox": "firefox",
+    "spotify": "Spotify",
+    "musica": "Spotify",
+    "terminal": "cmd",
+    "cmd": "cmd",
+    "powershell": "powershell",
+    "explorer": "explorer",
+    "whatsapp": "whatsapp",
+    "wpp": "whatsapp",
+    "calculadora": "calc",
+    "notepad": "notepad",
+    "bloco de notas": "notepad"
+  },
+  "youtube_channels": {
+    "bistecone": "@Bistecone",
+    "bistecona": "@Bistecone",
+    "gameplayrj": "@GameplayRJ"
+  },
+  "contacts": {
+    "mãe": "+5511999999999",
+    "mae": "+5511999999999",
+    "minha mãe": "+5511999999999",
+    "minha mae": "+5511999999999",
+    "pai": "+5511988888888",
+    "namorada": "+5511977777777",
+    "pedro": "+5511966666666"
+  }
+}
