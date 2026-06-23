@@ -1,38 +1,34 @@
 import subprocess
-import sys
 from pathlib import Path
 
 _DEFAULT_VOICE = "Joana"
 _FALLBACK_VOICES = ["Luciana", "Samantha", "Alex"]
 _USE_TTS = True
-_AVAILABLE: list[str] | None = None
+_SPEECH_RATE = 220
+_RESOLVED_VOICE: str | None = None
 
 
-def _get_voices() -> list[str]:
-    global _AVAILABLE
-    if _AVAILABLE is not None:
-        return _AVAILABLE
+def _resolve_voice() -> str:
+    global _RESOLVED_VOICE
+    if _RESOLVED_VOICE:
+        return _RESOLVED_VOICE
     result = subprocess.run(
         ["say", "-v", "?"],
         capture_output=True,
         text=True,
         check=False,
     )
-    voices = []
+    available = set()
     for line in (result.stdout or "").splitlines():
         name = line.split()[0] if line.strip() else ""
         if name:
-            voices.append(name)
-    _AVAILABLE = voices
-    return voices
-
-
-def _pick_voice() -> str:
-    available = _get_voices()
+            available.add(name)
     for candidate in [_DEFAULT_VOICE] + _FALLBACK_VOICES:
         if candidate in available:
+            _RESOLVED_VOICE = candidate
             return candidate
-    return available[0] if available else "Samantha"
+    _RESOLVED_VOICE = list(available)[0] if available else "Samantha"
+    return _RESOLVED_VOICE
 
 
 def is_enabled() -> bool:
@@ -47,9 +43,8 @@ def set_enabled(enabled: bool):
 def speak(text: str):
     if not _USE_TTS or not text or not text.strip():
         return
-    voice = _pick_voice()
     subprocess.run(
-        ["say", "-v", voice, text.strip()],
+        ["say", "-v", _resolve_voice(), "-r", str(_SPEECH_RATE), text.strip()],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
