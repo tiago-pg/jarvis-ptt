@@ -61,10 +61,13 @@ def _play_wav(path: Path):
 
 
 WAKE_WORDS = sorted([
-    "rei jarvis", "rei járvis",
+    "rei jarvis", "rei járvis", "ré jarvis",
     "jarvis", "hey jarvis", "ei jarvis", "hey jarvis", "ei járvis",
+    "hey joves", "ei joves",
+    "ragearves", "rage arvis",
+    "darviz", "dárvis", "djarvis",
     "jarves", "jervis", "járvis", "harvis", "djárvis",
-    "hey", "ei", "rei",
+    "ré", "hey", "ei", "rei",
 ], key=len, reverse=True)
 
 
