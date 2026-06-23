@@ -17,12 +17,12 @@ import tts
 
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
-SHORT_SILENCE_MS = 1200
-MEDIUM_SILENCE_MS = 2000
-LONG_SILENCE_MS = 3000
-SHORT_SWITCH_SECONDS = 5
+SHORT_SILENCE_MS = 2000
+MEDIUM_SILENCE_MS = 3000
+LONG_SILENCE_MS = 4000
+SHORT_SWITCH_SECONDS = 8
 MEDIUM_SWITCH_SECONDS = 30
-ENERGY_THRESHOLD = 0.04
+ENERGY_THRESHOLD = 0.055
 PRE_ROLL_CHUNKS = 8
 MAX_RECORD_SECONDS = 15
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
@@ -200,7 +200,7 @@ class JarvisEngine:
 
             if rms >= ENERGY_THRESHOLD:
                 self._vad_hot += 1
-                if self._vad_hot >= 5 and (now - self._last_process_time) > COOLDOWN_SECONDS:
+                if self._vad_hot >= 8 and (now - self._last_process_time) > COOLDOWN_SECONDS:
                     print(f"[VAD] Fala detectada (rms: {rms:.4f})")
                     self._on_wake_detected()
             else:
