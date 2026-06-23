@@ -12,6 +12,11 @@ import numpy as np
 import requests
 import sounddevice as sd
 
+try:
+    import pvporcupine
+except ImportError:
+    pvporcupine = None
+
 import agent_router
 import tts
 
@@ -88,6 +93,8 @@ class JarvisEngine:
         self._groq_key = _load_api_key("GROQ_API_KEY")
         self._last_process_time = 0.0
         self._vad_hot = 0
+        self._porcupine = None
+        self._wake_via_porcupine = False
 
     @property
     def on_status_change(self):
@@ -142,11 +149,23 @@ class JarvisEngine:
             except Exception:
                 pass
             self._stream = None
+        if self._porcupine:
+            self._porcupine.delete()
+            self._porcupine = None
         self._set_status("parado")
 
     def _init_wakeword(self):
-        print(f"[WakeWord] VAD + Groq Whisper")
-        self._oww_model = None
+        access_key = _load_api_key("PICOVOICE_ACCESS_KEY")
+        placeholder = not access_key or "cole_sua_key" in access_key
+        if pvporcupine is not None and not placeholder:
+            try:
+                self._porcupine = pvporcupine.create(access_key=access_key, keywords=["jarvis"])
+                print(f"[WakeWord] Porcupine offline ('jarvis', frame_length={self._porcupine.frame_length})")
+                return
+            except Exception as exc:
+                print(f"[WakeWord] Falha ao iniciar Porcupine, usando fallback: {exc}", file=sys.stderr)
+                self._porcupine = None
+        print(f"[WakeWord] VAD + Groq Whisper (fallback)")
 
     def _audio_loop(self):
         self._stream = sd.InputStream(
@@ -194,9 +213,16 @@ class JarvisEngine:
                     self._finish_recording()
                 return
 
-            self._pre_roll.append(mono.copy())
-
             now = time.time()
+
+            if self._porcupine is not None:
+                if len(pcm16) == self._porcupine.frame_length and (now - self._last_process_time) > COOLDOWN_SECONDS:
+                    if self._porcupine.process(pcm16) >= 0:
+                        print(f"[Porcupine] Wake word detectada")
+                        self._on_wake_detected(via_porcupine=True)
+                return
+
+            self._pre_roll.append(mono.copy())
 
             if rms >= ENERGY_THRESHOLD:
                 self._vad_hot += 1
@@ -206,9 +232,10 @@ class JarvisEngine:
             else:
                 self._vad_hot = 0
 
-    def _on_wake_detected(self):
+    def _on_wake_detected(self, via_porcupine: bool = False):
         self._recording = True
-        self._audio_buffer = list(self._pre_roll)
+        self._wake_via_porcupine = via_porcupine
+        self._audio_buffer = [] if via_porcupine else list(self._pre_roll)
         self._silence_chunks = 0
         self._record_chunks = len(self._audio_buffer)
         self._set_status("gravando")
@@ -254,6 +281,29 @@ class JarvisEngine:
             return
 
         print(f"[STT] '{text}'", flush=True)
+
+        if self._wake_via_porcupine:
+            command_text = text.strip()
+            if not command_text:
+                self._report_result("Sim?")
+                tts.speak("Sim?")
+                self._last_process_time = time.time()
+                self._set_status("ouvindo")
+                return
+            text = command_text
+            try:
+                result = agent_router.route_command(text)
+                self._report_result(result)
+                show_result = result.lstrip("💬 ")
+                tts.speak(show_result)
+                _play_wav(SOUNDS_DIR / "done.wav")
+            except Exception as exc:
+                self._report_error(f"Erro no comando: {exc}")
+                tts.speak("Desculpe, ocorreu um erro.")
+                _play_wav(SOUNDS_DIR / "error.wav")
+            self._last_process_time = time.time()
+            self._set_status("ouvindo")
+            return
 
         lower = text.strip().lower()
         command_text = ""

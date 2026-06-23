@@ -10,3 +10,4 @@ psutil>=5.8.0
 pycaw>=20181102
 comtypes>=1.4.0
 pywin32>=300
+pvporcupine>=3.0.0
