@@ -82,6 +82,8 @@ class JarvisEngine:
         self._on_command_result = None
         self._on_error = None
         self._groq_key = _load_api_key("GROQ_API_KEY")
+        self._porcupine_key = _load_api_key("PICOVOICE_ACCESS_KEY")
+        self._porcupine = None
         self._last_process_time = 0.0
 
     @property
@@ -124,8 +126,42 @@ class JarvisEngine:
         if self._running:
             return
         self._running = True
+        self._init_porcupine()
         self._set_status("inicializando")
         threading.Thread(target=self._audio_loop, daemon=True, name="audio-loop").start()
+
+    def stop(self):
+        self._running = False
+        self._close_porcupine()
+        if self._stream:
+            try:
+                self._stream.stop()
+                self._stream.close()
+            except Exception:
+                pass
+            self._stream = None
+        self._set_status("parado")
+
+    def _init_porcupine(self):
+        if not self._porcupine_key or "sua" in self._porcupine_key.lower():
+            return
+        try:
+            import pvporcupine
+            self._porcupine = pvporcupine.create(
+                access_key=self._porcupine_key, keywords=["jarvis"]
+            )
+            print(f"[Porcupine] Wake word 'Jarvis' ativo (offline)")
+        except Exception as exc:
+            print(f"[Porcupine] {exc} - usando fallback VAD")
+            self._porcupine = None
+
+    def _close_porcupine(self):
+        if self._porcupine:
+            try:
+                self._porcupine.delete()
+            except Exception:
+                pass
+            self._porcupine = None
 
     def stop(self):
         self._running = False
@@ -186,13 +222,20 @@ class JarvisEngine:
 
             self._pre_roll.append(mono.copy())
 
+            if self._porcupine:
+                pcm16 = (np.clip(mono, -1.0, 1.0) * 32767).astype(np.int16)
+                result = self._porcupine.process(pcm16.tobytes())
+                if result >= 0:
+                    print("[Porcupine] 'Jarvis' detectado!")
+                    self._on_wake_detected()
+                return
+
             now = time.time()
             if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
-                print("[VAD] Fala detectada")
+                print("[VAD] Fala detectada (fallback)")
                 self._on_wake_detected()
 
     def _on_wake_detected(self):
-        self._wake_detected = True
         self._recording = True
         self._audio_buffer = list(self._pre_roll)
         self._silence_chunks = 0
