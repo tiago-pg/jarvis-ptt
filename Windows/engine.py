@@ -18,13 +18,13 @@ import tts
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
 SHORT_SILENCE_MS = 1200
-MEDIUM_SILENCE_MS = 2500
-LONG_SILENCE_MS = 4500
+MEDIUM_SILENCE_MS = 2000
+LONG_SILENCE_MS = 3000
 SHORT_SWITCH_SECONDS = 5
 MEDIUM_SWITCH_SECONDS = 30
-ENERGY_THRESHOLD = 0.008
+ENERGY_THRESHOLD = 0.025
 PRE_ROLL_CHUNKS = 8
-MAX_RECORD_SECONDS = 120
+MAX_RECORD_SECONDS = 15
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
 COOLDOWN_SECONDS = 2.5
 MIN_RECORD_SECONDS = 0.8
@@ -61,9 +61,10 @@ def _play_wav(path: Path):
 
 
 WAKE_WORDS = sorted([
+    "rei jarvis", "rei járvis",
     "jarvis", "hey jarvis", "ei jarvis", "hey jarvis", "ei járvis",
     "jarves", "jervis", "járvis", "harvis", "djárvis",
-    "hey", "ei",
+    "hey", "ei", "rei",
 ], key=len, reverse=True)
 
 
