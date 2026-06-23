@@ -17,10 +17,12 @@ import tts
 
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
-SILENCE_DURATION_MS = 700
+SHORT_SILENCE_MS = 700
+LONG_SILENCE_MS = 2500
+SILENCE_SWITCH_SECONDS = 5
 ENERGY_THRESHOLD = 0.012
 PRE_ROLL_CHUNKS = 8
-MAX_RECORD_SECONDS = 5
+MAX_RECORD_SECONDS = 30
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
 
 def _strip_emojis(text: str) -> str:
@@ -101,7 +103,6 @@ class JarvisEngine:
         self._silence_chunks = 0
         self._record_chunks = 0
         self._max_record_chunks = int(MAX_RECORD_SECONDS * 1000 / CHUNK_MS)
-        self._silence_limit = int(SILENCE_DURATION_MS / CHUNK_MS)
         self._pre_roll = collections.deque(maxlen=PRE_ROLL_CHUNKS)
         self._lock = threading.Lock()
         self._on_status_change = None
@@ -215,12 +216,18 @@ class JarvisEngine:
                 self._record_chunks += 1
                 self._audio_buffer.append(mono.copy())
 
+                duration_s = self._record_chunks * CHUNK_MS / 1000
+                if duration_s < SILENCE_SWITCH_SECONDS:
+                    silence_limit = int(SHORT_SILENCE_MS / CHUNK_MS)
+                else:
+                    silence_limit = int(LONG_SILENCE_MS / CHUNK_MS)
+
                 if rms < ENERGY_THRESHOLD:
                     self._silence_chunks += 1
                 else:
                     self._silence_chunks = 0
 
-                if self._silence_chunks >= self._silence_limit or self._record_chunks >= self._max_record_chunks:
+                if self._silence_chunks >= silence_limit or self._record_chunks >= self._max_record_chunks:
                     self._finish_recording()
                 return
 
