@@ -1,0 +1,52 @@
+{
+  "app_aliases": {
+    "vscode": "Visual Studio Code",
+    "vs code": "Visual Studio Code",
+    "code": "Visual Studio Code",
+    "chrome": "Google Chrome",
+    "navegador": "Google Chrome",
+    "browser": "Google Chrome",
+    "safari": "Safari",
+    "spotify": "Spotify",
+    "musica": "Spotify",
+    "terminal": "Terminal",
+    "finder": "Finder",
+    "notas": "Notes",
+    "calculadora": "Calculator",
+    "slack": "Slack",
+    "discord": "Discord",
+    "whatsapp": "WhatsApp",
+    "wpp": "WhatsApp",
+    "fotos": "Photos",
+    "calendario": "Calendar",
+    "calendário": "Calendar",
+    "lembretes": "Reminders",
+    "mail": "Mail",
+    "email": "Mail",
+    "mapas": "Maps",
+    "configurações": "System Settings",
+    "ajustes": "System Settings",
+    "fACETIME": "FaceTime"
+  },
+  "youtube_channels": {
+    "gameplayrj": "@GameplayRJ",
+    "bistecone": "@Bistecone",
+    "bistecona": "@Bistecone",
+    "podcast": "@Podpah",
+    "flow": "@FlowPodcast"
+  },
+  "contacts": {
+    "mãe": "+5511999999999",
+    "mae": "+5511999999999",
+    "minha mãe": "+5511999999999",
+    "minha mae": "+5511999999999",
+    "pai": "+5511988888888",
+    "namorada": "+5511977777777",
+    "pedro": "+5511966666666",
+    "joão": "+5511955555555",
+    "joao": "+5511955555555"
+  },
+  "reminder_defaults": {
+    "default_list": "Jarvis"
+  }
+}
