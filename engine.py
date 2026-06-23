@@ -18,11 +18,13 @@ import tts
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
 SHORT_SILENCE_MS = 700
-LONG_SILENCE_MS = 2500
-SILENCE_SWITCH_SECONDS = 5
+MEDIUM_SILENCE_MS = 2500
+LONG_SILENCE_MS = 4500
+SHORT_SWITCH_SECONDS = 5
+MEDIUM_SWITCH_SECONDS = 30
 ENERGY_THRESHOLD = 0.012
 PRE_ROLL_CHUNKS = 8
-MAX_RECORD_SECONDS = 30
+MAX_RECORD_SECONDS = 120
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
 
 def _strip_emojis(text: str) -> str:
@@ -217,8 +219,10 @@ class JarvisEngine:
                 self._audio_buffer.append(mono.copy())
 
                 duration_s = self._record_chunks * CHUNK_MS / 1000
-                if duration_s < SILENCE_SWITCH_SECONDS:
+                if duration_s < SHORT_SWITCH_SECONDS:
                     silence_limit = int(SHORT_SILENCE_MS / CHUNK_MS)
+                elif duration_s < MEDIUM_SWITCH_SECONDS:
+                    silence_limit = int(MEDIUM_SILENCE_MS / CHUNK_MS)
                 else:
                     silence_limit = int(LONG_SILENCE_MS / CHUNK_MS)
 
@@ -327,7 +331,7 @@ class JarvisEngine:
             headers={"Authorization": f"Bearer {self._groq_key}"},
             files={"file": ("audio.wav", wav_bytes, "audio/wav")},
             data={"model": GROQ_STT_MODEL, "language": "pt"},
-            timeout=15,
+            timeout=30,
         )
         resp.raise_for_status()
         return resp.json().get("text", "").strip()

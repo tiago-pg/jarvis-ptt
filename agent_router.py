@@ -322,10 +322,16 @@ SYSTEM_PROMPT = (
     "Se o comando for 'abre o WhatsApp e liga pra minha mãe' então use whatsapp_call('mãe'). "
     "Para 'abre o YouTube no canal do Bistecone' use open_youtube(channel='bistecone'). "
     "Se o usuario perguntar sobre o que esta na tela, use inspect_screen. "
-"Se o usuario pedir pra falar algo em voz alta, use speak. "
-"Normalize nomes de app (ex: 'vscode' -> 'Visual Studio Code'). "
+    "Se o usuario pedir pra falar algo em voz alta, use speak. "
+    "Normalize nomes de app (ex: 'vscode' -> 'Visual Studio Code'). "
     "Se o comando não corresponder a nenhuma ferramenta, não chame nada - o sistema ignorará. "
     "NUNCA responda em texto - apenas retorne as chamadas de ferramenta."
+    "\n\n"
+    "DICTATION MODE: Quando o usuario disser 'abre aspas' ou 'abre aspas' (ou similar), "
+    "TODO o texto a seguir ate 'fecha aspas' ou 'fecha aspas' deve ser extraido e digitado "
+    "literalmente com type_text(). O conteudo entre os marcadores de aspas eh o que deve "
+    "ser digitado, sem alteracoes. Se o comando incluir 'escreva' ou 'digite' seguido de "
+    "um texto longo, a intencao eh que esse texto seja digitado via type_text."
 )
 
 
@@ -364,7 +370,7 @@ def route_command(text: str) -> str:
                 "tool_choice": "auto",
                 "temperature": 0,
             },
-            timeout=15,
+            timeout=30,
         )
         resp.raise_for_status()
         data = resp.json()
