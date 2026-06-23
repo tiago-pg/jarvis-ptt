@@ -314,8 +314,8 @@ class JarvisEngine:
         try:
             result = agent_router.route_command(text)
             self._report_result(result)
-            speak_text = _strip_emojis(result)
-            tts.speak(speak_text)
+            show_result = _strip_emojis(result.lstrip("💬 "))
+            tts.speak(show_result)
             DONE_SOUND.play()
         except Exception as exc:
             self._report_error(f"Erro no comando: {exc}")

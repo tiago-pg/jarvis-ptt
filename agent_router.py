@@ -290,6 +290,120 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "shutdown_mac",
+            "description": "Desliga o Mac completamente. Use quando o usuario pedir 'desliga o Mac', 'desligar'.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "sleep_mac",
+            "description": "Suspende/Hiberna o Mac. Use para 'suspender', 'hibernar'.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "lock_screen",
+            "description": "Bloqueia a tela do Mac. Use para 'travar tela', 'bloquear'.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "volume_set",
+            "description": "Ajusta o volume do Mac para um nivel especifico (0-100).",
+            "parameters": {
+                "type": "object",
+                "properties": {"level": {"type": "integer", "description": "Nivel de 0 a 100."}},
+                "required": ["level"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "volume_up",
+            "description": "Aumenta o volume do Mac em alguns pontos (padrao 10).",
+            "parameters": {
+                "type": "object",
+                "properties": {"amount": {"type": "integer", "description": "Quantos pontos aumentar."}},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "volume_down",
+            "description": "Diminui o volume do Mac em alguns pontos (padrao 10).",
+            "parameters": {
+                "type": "object",
+                "properties": {"amount": {"type": "integer", "description": "Quantos pontos diminuir."}},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "mute",
+            "description": "Muta o volume do Mac (silencia).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "unmute",
+            "description": "Remove o mute do volume do Mac.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "open_finder",
+            "description": "Abre uma pasta no Finder. Use para 'abre a pasta X'.",
+            "parameters": {
+                "type": "object",
+                "properties": {"path": {"type": "string", "description": "Caminho da pasta (ex: ~/Desktop)."}},
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "copy_clipboard",
+            "description": "Copia um texto para a area de transferencia do Mac (clipboard).",
+            "parameters": {
+                "type": "object",
+                "properties": {"text": {"type": "string", "description": "Texto a ser copiado."}},
+                "required": ["text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_clipboard",
+            "description": "Le o conteudo atual da area de transferencia (clipboard).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "empty_trash",
+            "description": "Esvazia a lixeira do Mac.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
 ]
 
 TOOL_IMPL = {
@@ -311,27 +425,41 @@ TOOL_IMPL = {
     "system_status": mac_tools.system_status,
     "inspect_screen": mac_tools.inspect_screen,
     "speak": mac_tools.speak,
+    "shutdown_mac": mac_tools.shutdown_mac,
+    "sleep_mac": mac_tools.sleep_mac,
+    "lock_screen": mac_tools.lock_screen,
+    "volume_set": mac_tools.volume_set,
+    "volume_up": mac_tools.volume_up,
+    "volume_down": mac_tools.volume_down,
+    "mute": mac_tools.mute,
+    "unmute": mac_tools.unmute,
+    "open_finder": mac_tools.open_finder,
+    "copy_clipboard": mac_tools.copy_clipboard,
+    "read_clipboard": mac_tools.read_clipboard,
+    "empty_trash": mac_tools.empty_trash,
 }
 
 SYSTEM_PROMPT = (
-    "Você é o Jarvis, um assistente de voz para MacBook. O usuário já disse a wake word "
-    "'Hey Jarvis', então o texto recebido é um comando a ser executado, não conversa casual. "
-    "Responda APENAS chamando as ferramentas necessárias - NUNCA responda com texto explicativo. "
-    "Seja preciso: quebre comandos complexos em chamadas de ferramenta na ordem correta. "
-    "Para 'ligue para minha mãe' ou 'faz uma ligação para X' use whatsapp_call ou facetime_call. "
-    "Se o comando for 'abre o WhatsApp e liga pra minha mãe' então use whatsapp_call('mãe'). "
-    "Para 'abre o YouTube no canal do Bistecone' use open_youtube(channel='bistecone'). "
-    "Se o usuario perguntar sobre o que esta na tela, use inspect_screen. "
-    "Se o usuario pedir pra falar algo em voz alta, use speak. "
-    "Normalize nomes de app (ex: 'vscode' -> 'Visual Studio Code'). "
-    "Se o comando não corresponder a nenhuma ferramenta, não chame nada - o sistema ignorará. "
-    "NUNCA responda em texto - apenas retorne as chamadas de ferramenta."
+    "Voce e o Jarvis, um assistente de voz pessoal para MacBook. "
+    "O usuario ja disse a wake word 'Hey Jarvis', entao o texto recebido e um pedido direto."
     "\n\n"
-    "DICTATION MODE: Quando o usuario disser 'abre aspas' ou 'abre aspas' (ou similar), "
-    "TODO o texto a seguir ate 'fecha aspas' ou 'fecha aspas' deve ser extraido e digitado "
-    "literalmente com type_text(). O conteudo entre os marcadores de aspas eh o que deve "
-    "ser digitado, sem alteracoes. Se o comando incluir 'escreva' ou 'digite' seguido de "
-    "um texto longo, a intencao eh que esse texto seja digitado via type_text."
+    "REGRAS:\n"
+    "- Se o usuario pedir uma ACAO que voce pode executar (abrir app, ligar, pesquisar, etc.), "
+    "chame a ferramenta correspondente. Se precisar de multiplas acoes, chame todas na ordem certa.\n"
+    "- Se o usuario fizer uma PERGUNTA ou CONVERSA (ex: 'qual a capital do Brasil', "
+    "'me ajuda a pensar em nomes', 'quem foi Einstein'), responda com um texto amigavel e direto.\n"
+    "- Seja natural e conciso. Respire.\n"
+    "- Normalize nomes de app: 'vscode' -> 'Visual Studio Code'.\n"
+    "- Responda EM PORTUGUES brasileiro.\n"
+    "- Para 'desliga o Mac', 'desligar' use shutdown_mac().\n"
+    "- Para 'suspender', 'hibernar' use sleep_mac().\n"
+    "- Para 'travar tela', 'bloquear' use lock_screen().\n"
+    "- Para 'liga pra X' use whatsapp_call ou facetime_call.\n"
+    "- Para 'abre o YouTube no canal X' use open_youtube(channel='X').\n"
+    "- Para perguntas sobre a tela use inspect_screen().\n"
+    "- Se o usuario pedir 'escreva' ou 'digite' um texto longo, extraia o conteudo "
+    "entre 'abre aspas' e 'fecha aspas' e use type_text() para digitar literalmente.\n"
+    "- Se nao houver ferramenta adequada, responda voce mesmo."
 )
 
 
@@ -378,12 +506,16 @@ def route_command(text: str) -> str:
         return f"Erro no roteador: {exc}"
 
     message = data["choices"][0]["message"]
+    content = (message.get("content") or "").strip()
     tool_calls = message.get("tool_calls") or []
 
     if not tool_calls:
-        return "Não entendi o comando."
+        return content if content else "Sim?"
 
     results = []
+    if content:
+        results.append(f"💬 {content}")
+
     for call in tool_calls:
         name = call["function"]["name"]
         try:
@@ -400,4 +532,11 @@ def route_command(text: str) -> str:
         except Exception as exc:
             results.append(f"❌ Erro em {name}: {exc}")
 
-    return "\n".join(results)
+    final = "\n".join(results)
+
+    # Se a IA respondeu com texto + ferramentas, prioriza a resposta falada
+    if content and tool_calls:
+        return f"💬 {content}"
+    if content and not tool_calls:
+        return f"💬 {content}"
+    return final

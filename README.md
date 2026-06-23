@@ -197,6 +197,8 @@ Vá em **Ajustes do Sistema → Privacidade e Segurança** e autorize o Terminal
 
 ## 🛠️ Comandos disponíveis
 
+> **Dica:** Além dos comandos abaixo, você pode simplesmente **conversar** com o Jarvis! Pergunte qualquer coisa — "qual a capital do Brasil", "me ajuda a pensar em nomes", "quem foi Einstein" — ele responda como uma IA normal. Você não precisa decorar comandos.
+
 | Função | Exemplo |
 |--------|---------|
 | Abrir app | "abre o Spotify", "abre o VSCode" |
@@ -205,6 +207,11 @@ Vá em **Ajustes do Sistema → Privacidade e Segurança** e autorize o Terminal
 | WhatsApp chat | "manda mensagem pro pedro falando bora hoje" |
 | WhatsApp ligação | "liga pra minha mãe" |
 | FaceTime | "faz uma ligação de FaceTime pro Pedro" |
+| Desligar Mac | "desliga o Mac", "desligar" |
+| Suspender Mac | "suspende o Mac", "hibernar" |
+| Bloquear tela | "trava a tela", "bloquear" |
+| Volume | "aumenta o volume", "diminui", "muda pra 30" |
+| Mutar | "silencia o Mac" |
 | Pesquisar na web | "pesquisa preço do iPhone 16" |
 | Horas | "que horas são" |
 | Data | "que dia é hoje" |
@@ -216,6 +223,11 @@ Vá em **Ajustes do Sistema → Privacidade e Segurança** e autorize o Terminal
 | Ver tela | "o que tem na minha tela" |
 | Falar algo | "fala que o café está pronto" |
 | Terminal | "abre o terminal na pasta projetos e roda git status" |
+| Digitar texto | "escreve ABRE ASPAS [texto] FECHA ASPAS" |
+| Clipboard | "copia isso", "cola", "o que tem no clipboard" |
+| Lixeira | "esvazia a lixeira" |
+| Abrir pasta | "abre a pasta Downloads" |
+| Pergunta geral | "qual a capital do Japão", "me explica blockchain" |
 
 ---
 

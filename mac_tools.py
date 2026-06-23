@@ -316,3 +316,64 @@ def speak(text: str) -> str:
 def inspect_screen(question: str) -> str:
     import vision as _vision
     return _vision.analyze_screen(question)
+
+
+def shutdown_mac() -> str:
+    subprocess.run(["osascript", "-e", 'tell app "System Events" to shut down'], check=False)
+    return "Desligando o Mac."
+
+
+def sleep_mac() -> str:
+    subprocess.run(["osascript", "-e", 'tell app "System Events" to sleep'], check=False)
+    return "Suspendo o Mac."
+
+
+def lock_screen() -> str:
+    subprocess.run(["osascript", "-e", 'tell app "System Events" to keystroke "q" using {command down, control down}'], check=False)
+    return "Tela bloqueada."
+
+
+def volume_set(level: int) -> str:
+    level = max(0, min(100, level))
+    subprocess.run(["osascript", "-e", f"set volume output volume {level}"], check=False)
+    return f"Volume ajustado para {level}%."
+
+
+def volume_up(amount: int = 10) -> str:
+    subprocess.run(["osascript", "-e", f"set volume output volume (output volume of (get volume settings)) + {amount}"], check=False)
+    return f"Aumentei o volume."
+
+
+def volume_down(amount: int = 10) -> str:
+    subprocess.run(["osascript", "-e", f"set volume output volume (output volume of (get volume settings)) - {amount}"], check=False)
+    return f"Diminui o volume."
+
+
+def mute() -> str:
+    subprocess.run(["osascript", "-e", "set volume output muted true"], check=False)
+    return "Microfone mute."
+
+
+def unmute() -> str:
+    subprocess.run(["osascript", "-e", "set volume output muted false"], check=False)
+    return "Microfone desmutado."
+
+
+def open_finder(path: str = "~") -> str:
+    subprocess.run(["open", path], check=False)
+    return f"Abri a pasta {path}."
+
+
+def copy_clipboard(text: str) -> str:
+    subprocess.run(["pbcopy"], input=text.encode("utf-8"), check=False)
+    return "Copiei para a area de transferencia."
+
+
+def read_clipboard() -> str:
+    res = subprocess.run(["pbpaste"], capture_output=True, check=False)
+    return res.stdout.decode("utf-8").strip() or "Clipboard vazio."
+
+
+def empty_trash() -> str:
+    subprocess.run(["osascript", "-e", 'tell app "Finder" to empty trash'], check=False)
+    return "Lixeira esvaziada."
