@@ -82,9 +82,7 @@ class JarvisEngine:
         self._on_command_result = None
         self._on_error = None
         self._groq_key = _load_api_key("GROQ_API_KEY")
-        self._oww_model = None
         self._last_process_time = 0.0
-        self._oww_buffer = np.array([], dtype=np.float64)
 
     @property
     def on_status_change(self):
@@ -142,18 +140,8 @@ class JarvisEngine:
         self._set_status("parado")
 
     def _init_wakeword(self):
-        try:
-            from openwakeword.model import Model
-            self._oww_model = Model(
-                wakeword_models=["hey_jarvis"],
-                inference_framework="onnx",
-                enable_speex_noise_suppression=False,
-            )
-            print(f"[WakeWord] OpenWakeWord ativo (offline, ONNX)")
-        except Exception as exc:
-            print(f"[WakeWord] {exc}")
-            print(f"[WakeWord] Usando fallback VAD + Groq")
-            self._oww_model = None
+        print(f"[WakeWord] Usando VAD + Groq Whisper (sem wake word local)")
+        self._oww_model = None
 
     def _audio_loop(self):
         self._stream = sd.InputStream(
@@ -203,30 +191,9 @@ class JarvisEngine:
 
             self._pre_roll.append(mono.copy())
 
-            if self._oww_model:
-                self._oww_buffer = np.concatenate([self._oww_buffer, mono.astype(np.float64)])
-                while len(self._oww_buffer) >= 1280:
-                    chunk = self._oww_buffer[:1280].copy()
-                    self._oww_buffer = self._oww_buffer[1280:]
-                    pred = self._oww_model.predict(chunk)
-                    score = pred.get("hey_jarvis", 0)
-                    if score > 0.01:
-                        print(f"[OWW] score: {score:.3f}")
-                    if score >= 0.15:
-                        print(f"[WakeWord] 'Jarvis' detectado! (score: {score:.2f})")
-                        self._on_wake_detected()
-                        self._oww_buffer = np.array([], dtype=np.float64)
-                        return
-
-                now = time.time()
-                if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
-                    print("[VAD] Fala detectada (fallback)")
-                    self._on_wake_detected()
-                return
-
             now = time.time()
             if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
-                print("[VAD] Fala detectada (fallback)")
+                print(f"[VAD] Fala detectada (rms: {rms:.4f})")
                 self._on_wake_detected()
 
     def _on_wake_detected(self):
