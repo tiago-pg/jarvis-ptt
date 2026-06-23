@@ -82,9 +82,9 @@ class JarvisEngine:
         self._on_command_result = None
         self._on_error = None
         self._groq_key = _load_api_key("GROQ_API_KEY")
-        self._porcupine_key = _load_api_key("PICOVOICE_ACCESS_KEY")
-        self._porcupine = None
+        self._oww_model = None
         self._last_process_time = 0.0
+        self._oww_buffer = np.array([], dtype=np.float64)
 
     @property
     def on_status_change(self):
@@ -126,13 +126,12 @@ class JarvisEngine:
         if self._running:
             return
         self._running = True
-        self._init_porcupine()
+        self._init_wakeword()
         self._set_status("inicializando")
         threading.Thread(target=self._audio_loop, daemon=True, name="audio-loop").start()
 
     def stop(self):
         self._running = False
-        self._close_porcupine()
         if self._stream:
             try:
                 self._stream.stop()
@@ -142,37 +141,19 @@ class JarvisEngine:
             self._stream = None
         self._set_status("parado")
 
-    def _init_porcupine(self):
-        if not self._porcupine_key or "sua" in self._porcupine_key.lower():
-            return
+    def _init_wakeword(self):
         try:
-            import pvporcupine
-            self._porcupine = pvporcupine.create(
-                access_key=self._porcupine_key, keywords=["jarvis"]
+            from openwakeword.model import Model
+            self._oww_model = Model(
+                wakeword_models=["hey_jarvis"],
+                inference_framework="onnx",
+                enable_speex_noise_suppression=False,
             )
-            print(f"[Porcupine] Wake word 'Jarvis' ativo (offline)")
+            print(f"[WakeWord] OpenWakeWord ativo (offline, ONNX)")
         except Exception as exc:
-            print(f"[Porcupine] {exc} - usando fallback VAD")
-            self._porcupine = None
-
-    def _close_porcupine(self):
-        if self._porcupine:
-            try:
-                self._porcupine.delete()
-            except Exception:
-                pass
-            self._porcupine = None
-
-    def stop(self):
-        self._running = False
-        if self._stream:
-            try:
-                self._stream.stop()
-                self._stream.close()
-            except Exception:
-                pass
-            self._stream = None
-        self._set_status("parado")
+            print(f"[WakeWord] {exc}")
+            print(f"[WakeWord] Usando fallback VAD + Groq")
+            self._oww_model = None
 
     def _audio_loop(self):
         self._stream = sd.InputStream(
@@ -222,12 +203,18 @@ class JarvisEngine:
 
             self._pre_roll.append(mono.copy())
 
-            if self._porcupine:
-                pcm16 = (np.clip(mono, -1.0, 1.0) * 32767).astype(np.int16)
-                result = self._porcupine.process(pcm16.tobytes())
-                if result >= 0:
-                    print("[Porcupine] 'Jarvis' detectado!")
-                    self._on_wake_detected()
+            if self._oww_model:
+                self._oww_buffer = np.concatenate([self._oww_buffer, mono.astype(np.float64)])
+                while len(self._oww_buffer) >= 1280:
+                    chunk = self._oww_buffer[:1280]
+                    self._oww_buffer = self._oww_buffer[1280:]
+                    pred = self._oww_model.predict(chunk)
+                    score = pred.get("hey_jarvis", 0)
+                    if score > 0.5:
+                        print(f"[WakeWord] 'Jarvis' detectado! (score: {score:.2f})")
+                        self._on_wake_detected()
+                        self._oww_buffer = np.array([], dtype=np.float64)
+                        return
                 return
 
             now = time.time()
