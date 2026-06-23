@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import threading
 from pathlib import Path
@@ -23,22 +24,89 @@ ICON_BASE64 = (
     "Mf7b1Q+h8q3BfPfcRkdAAAAASUVORK5CYII="
 )
 
+APP_BUNDLE_ID = "com.tiago.jarvis"
+
+
+def _current_exe() -> str:
+    """Retorna o caminho do executável (script .py ou .app)."""
+    if getattr(sys, "frozen", False):
+        return sys.executable
+    return str(Path(__file__).resolve())
+
+
+def _launch_agent_path() -> Path:
+    return Path.home() / "Library" / "LaunchAgents" / f"{APP_BUNDLE_ID}.plist"
+
+
+def _login_item_installed() -> bool:
+    return _launch_agent_path().exists()
+
+
+def _install_login_item():
+    plist = _launch_agent_path()
+    plist.parent.mkdir(parents=True, exist_ok=True)
+    exe_path = _current_exe()
+    plist.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
+        '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+        '<plist version="1.0">\n'
+        "<dict>\n"
+        f"  <key>Label</key>\n"
+        f"  <string>{APP_BUNDLE_ID}</string>\n"
+        f"  <key>ProgramArguments</key>\n"
+        "  <array>\n"
+        f"    <string>{exe_path}</string>\n"
+        "  </array>\n"
+        "  <key>RunAtLoad</key>\n"
+        "  <true/>\n"
+        "  <key>KeepAlive</key>\n"
+        "  <false/>\n"
+        "</dict>\n"
+        "</plist>\n",
+        encoding="utf-8",
+    )
+    subprocess.run(
+        ["launchctl", "load", str(plist)],
+        capture_output=True,
+        check=False,
+    )
+
+
+def _uninstall_login_item():
+    plist = _launch_agent_path()
+    if plist.exists():
+        subprocess.run(
+            ["launchctl", "unload", str(plist)],
+            capture_output=True,
+            check=False,
+        )
+        plist.unlink()
+
 
 class JarvisStatusBarApp(rumps.App):
     def __init__(self):
         icon_path = Path(__file__).parent / "jarvis_icon.png"
         if not icon_path.exists():
             import base64
-            icon_bytes = base64.b64decode(ICON_BASE64)
-            icon_path.write_bytes(icon_bytes)
+
+            icon_path.write_bytes(base64.b64decode(ICON_BASE64))
 
         super().__init__(
             "Jarvis",
             icon=str(icon_path),
             template=True,
         )
+
+        self._startup_item = rumps.MenuItem(
+            f"{'✓ ' if _login_item_installed() else ''}Iniciar com o Mac",
+            callback=self._toggle_startup,
+        )
+
         self.menu = [
             rumps.MenuItem("Status: Ouvindo...", callback=None),
+            None,
+            self._startup_item,
             None,
             rumps.MenuItem("Desligar", callback=self._toggle_listener),
             None,
@@ -57,8 +125,7 @@ class JarvisStatusBarApp(rumps.App):
                 "inicializando": "⏳",
                 "parado": "⏹️",
             }
-            icon = icons.get(status, "🎧")
-            self.title = icon
+            self.title = icons.get(status, "🎧")
             self._status_item.title = f"Status: {status.title()}"
         rumps.timer.delay(0, _update)
 
@@ -72,6 +139,14 @@ class JarvisStatusBarApp(rumps.App):
 
     def _on_error(self, msg: str):
         self._show_notification("Jarvis ❌", msg)
+
+    def _toggle_startup(self, _):
+        if _login_item_installed():
+            _uninstall_login_item()
+            self._startup_item.title = "Iniciar com o Mac"
+        else:
+            _install_login_item()
+            self._startup_item.title = "✓ Iniciar com o Mac"
 
     def _toggle_listener(self, _=None):
         if self._listening:
