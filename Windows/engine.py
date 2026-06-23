@@ -22,7 +22,7 @@ MEDIUM_SILENCE_MS = 2500
 LONG_SILENCE_MS = 4500
 SHORT_SWITCH_SECONDS = 5
 MEDIUM_SWITCH_SECONDS = 30
-ENERGY_THRESHOLD = 0.012
+ENERGY_THRESHOLD = 0.008
 PRE_ROLL_CHUNKS = 8
 MAX_RECORD_SECONDS = 120
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
@@ -215,7 +215,9 @@ class JarvisEngine:
         self._record_chunks = 0
 
         duration = len(audio_data) / SAMPLE_RATE
+        print(f"[Fim] gravacao: {duration:.1f}s", flush=True)
         if duration < MIN_RECORD_SECONDS:
+            print(f"[Fim] muito curto ({duration:.1f}s < {MIN_RECORD_SECONDS}s)", flush=True)
             self._set_status("ouvindo")
             return
 
@@ -244,7 +246,7 @@ class JarvisEngine:
             self._set_status("ouvindo")
             return
 
-        print(f"[STT] {text}")
+        print(f"[STT] '{text}'", flush=True)
 
         lower = text.strip().lower()
         command_text = ""
@@ -257,13 +259,13 @@ class JarvisEngine:
                     is_command = True
                     break
                 else:
-                    print(f"[Wake word '{w}' detectado sem comando]")
+                    print(f"[Wake word '{w}' sem comando]", flush=True)
                     self._last_process_time = time.time()
                     self._set_status("ouvindo")
                     return
 
         if not is_command:
-            print(f"[Transcricao ignorada: '{text}']")
+            print(f"[Ignorado] '{text}'", flush=True)
             self._last_process_time = time.time()
             self._set_status("ouvindo")
             return
@@ -285,6 +287,7 @@ class JarvisEngine:
 
     def _transcribe(self, audio: np.ndarray) -> str:
         wav_bytes = self._pcm_to_wav(audio)
+        print("[Groq] Enviando para Whisper...", flush=True)
         resp = requests.post(
             GROQ_STT_URL,
             headers={"Authorization": f"Bearer {self._groq_key}"},
@@ -293,7 +296,9 @@ class JarvisEngine:
             timeout=30,
         )
         resp.raise_for_status()
-        return resp.json().get("text", "").strip()
+        text = resp.json().get("text", "").strip()
+        print(f"[Groq] Resposta: '{text}'", flush=True)
+        return text
 
     @staticmethod
     def _pcm_to_wav(audio_f64: np.ndarray) -> bytes:
