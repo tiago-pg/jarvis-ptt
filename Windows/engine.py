@@ -83,9 +83,8 @@ class JarvisEngine:
         self._on_command_result = None
         self._on_error = None
         self._groq_key = _load_api_key("GROQ_API_KEY")
-        self._oww_model = None
-        self._oww_buffer = np.array([], dtype=np.float64)
         self._last_process_time = 0.0
+        self._vad_hot = 0
 
     @property
     def on_status_change(self):
@@ -196,9 +195,13 @@ class JarvisEngine:
 
             now = time.time()
 
-            if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
-                print(f"[VAD] Fala detectada (rms: {rms:.4f})")
-                self._on_wake_detected()
+            if rms >= ENERGY_THRESHOLD:
+                self._vad_hot += 1
+                if self._vad_hot >= 3 and (now - self._last_process_time) > COOLDOWN_SECONDS:
+                    print(f"[VAD] Fala detectada (rms: {rms:.4f})")
+                    self._on_wake_detected()
+            else:
+                self._vad_hot = 0
 
     def _on_wake_detected(self):
         self._recording = True
@@ -261,6 +264,8 @@ class JarvisEngine:
                     break
                 else:
                     print(f"[Wake word '{w}' sem comando]", flush=True)
+                    self._report_result("Sim?")
+                    tts.speak("Sim?")
                     self._last_process_time = time.time()
                     self._set_status("ouvindo")
                     return
