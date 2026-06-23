@@ -26,6 +26,14 @@ ENERGY_THRESHOLD = 0.012
 PRE_ROLL_CHUNKS = 8
 MAX_RECORD_SECONDS = 120
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
+COOLDOWN_SECONDS = 2.5
+MIN_RECORD_SECONDS = 0.8
+
+WAKE_WORDS = sorted([
+    "jarvis", "hey jarvis", "ei jarvis", "hey jarvis", "ei járvis",
+    "jarves", "jervis", "járvis", "harvis", "djárvis",
+    "hey", "ei",
+], key=len, reverse=True)
 
 def _strip_emojis(text: str) -> str:
     import re
@@ -94,12 +102,9 @@ ERROR_SOUND = _make_sound(_ERROR_SOUND_PATH)
 
 
 class JarvisEngine:
-    def __init__(self, picovoice_key: str | None = None):
-        self._picovoice_key = picovoice_key
-        self._porcupine = None
+    def __init__(self):
         self._stream: sd.InputStream | None = None
         self._running = False
-        self._wake_detected = False
         self._recording = False
         self._audio_buffer: list[np.ndarray] = []
         self._silence_chunks = 0
@@ -153,13 +158,11 @@ class JarvisEngine:
         if self._running:
             return
         self._running = True
-        self._init_porcupine()
         self._set_status("inicializando")
         threading.Thread(target=self._audio_loop, daemon=True, name="audio-loop").start()
 
     def stop(self):
         self._running = False
-        self._close_porcupine()
         if self._stream:
             try:
                 self._stream.stop()
@@ -168,27 +171,6 @@ class JarvisEngine:
                 pass
             self._stream = None
         self._set_status("parado")
-
-    def _init_porcupine(self):
-        if not self._picovoice_key:
-            return
-        try:
-            import pvporcupine
-
-            self._porcupine = pvporcupine.create(
-                access_key=self._picovoice_key, keywords=["jarvis"]
-            )
-        except Exception as exc:
-            print(f"[Engine] Porcupine não disponível: {exc}", file=sys.stderr)
-            self._porcupine = None
-
-    def _close_porcupine(self):
-        if self._porcupine:
-            try:
-                self._porcupine.delete()
-            except Exception:
-                pass
-            self._porcupine = None
 
     def _audio_loop(self):
         self._stream = sd.InputStream(
@@ -211,8 +193,6 @@ class JarvisEngine:
 
         mono = indata[:, 0].astype(np.float64)
         rms = float(np.sqrt(np.mean(mono ** 2)))
-        pcm16 = (np.clip(mono, -1.0, 1.0) * 32767).astype(np.int16)
-        pcm_bytes = pcm16.tobytes()
 
         with self._lock:
             if self._recording:
@@ -238,18 +218,9 @@ class JarvisEngine:
 
             self._pre_roll.append(mono.copy())
 
-            if self._porcupine:
-                try:
-                    result = self._porcupine.process(pcm_bytes)
-                    if result >= 0:
-                        self._on_wake_detected()
-                        return
-                except Exception as exc:
-                    print(f"[Porcupine] {exc}", file=sys.stderr)
-            else:
-                now = time.time()
-                if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > 3.0:
-                    self._on_wake_detected()
+            now = time.time()
+            if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
+                self._on_wake_detected()
 
     def _on_wake_detected(self):
         self._wake_detected = True
@@ -298,29 +269,23 @@ class JarvisEngine:
 
         print(f"[STT] {text}")
 
+        lower = text.strip().lower()
+        command_text = ""
         is_command = False
-        if self._porcupine:
-            is_command = True
-        else:
-            lower = text.strip().lower()
-            wake_words = [
-                "jarvis", "hey jarvis", "ei jarvis", "hey jarvis", "ei járvis",
-                "jarves", "jervis", "járvis", "harvis", "djárvis",
-                "hey", "ei",
-            ]
-            for w in sorted(wake_words, key=len, reverse=True):
-                if lower.startswith(w):
-                    rest = text[len(w):].strip().lstrip(",:!.- ")
-                    if rest:
-                        text = rest
-                        is_command = True
-                        break
+        for w in WAKE_WORDS:
+            if lower.startswith(w):
+                rest = text[len(w):].strip().lstrip(",:!.- ")
+                if rest:
+                    command_text = rest
+                    is_command = True
+                    break
 
         if not is_command:
             self._last_process_time = time.time()
             self._set_status("ouvindo")
             return
 
+        text = command_text
         try:
             result = agent_router.route_command(text)
             self._report_result(result)

@@ -180,16 +180,7 @@ class JarvisStatusBarApp(rumps.App):
         rumps.quit_application()
 
     def _start_engine(self):
-        picovoice_key = os.environ.get("PICOVOICE_ACCESS_KEY")
-        if not picovoice_key:
-            env_path = Path(__file__).parent / ".env"
-            if env_path.exists():
-                for line in env_path.read_text(encoding="utf-8").splitlines():
-                    if line.strip().startswith("PICOVOICE_ACCESS_KEY="):
-                        picovoice_key = line.strip().split("=", 1)[1]
-                        break
-
-        self._engine = JarvisEngine(picovoice_key=picovoice_key)
+        self._engine = JarvisEngine()
         self._engine.on_status_change = self._update_status
         self._engine.on_command_result = self._on_command_result
         self._engine.on_error = self._on_error
