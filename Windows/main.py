@@ -110,20 +110,20 @@ class JarvisTrayApp:
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(
                 f"{'✓ ' if startup_checked else ''}Iniciar com Windows",
-                lambda: (_toggle_startup(), None),
+                lambda item: (_toggle_startup(), None),
             ),
             pystray.MenuItem(
-                f"Falar respostas",
-                lambda: self._toggle_tts(),
-                checked=lambda: tts.is_enabled(),
+                "Falar respostas",
+                lambda item: self._toggle_tts(),
+                checked=lambda item: tts.is_enabled(),
             ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(
                 "Desligar" if self._listening else "Ligar",
-                lambda: (self._toggle_listener(), None),
+                lambda item: (self._toggle_listener(), None),
             ),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Sair", lambda: self._quit()),
+            pystray.MenuItem("Sair", lambda item: self._quit()),
         )
 
     def _start_engine(self):
