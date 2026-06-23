@@ -111,6 +111,7 @@ class JarvisEngine:
         self._on_command_result = None
         self._on_error = None
         self._groq_key = _load_api_key("GROQ_API_KEY")
+        self._last_process_time = 0.0
 
     @property
     def on_status_change(self):
@@ -246,7 +247,8 @@ class JarvisEngine:
                 except Exception as exc:
                     print(f"[Porcupine] {exc}", file=sys.stderr)
             else:
-                if rms >= ENERGY_THRESHOLD:
+                now = time.time()
+                if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > 3.0:
                     self._on_wake_detected()
 
     def _on_wake_detected(self):
@@ -265,7 +267,7 @@ class JarvisEngine:
         self._silence_chunks = 0
         self._record_chunks = 0
 
-        if len(audio_data) < SAMPLE_RATE * 0.3:
+        if len(audio_data) < SAMPLE_RATE * 0.8:
             self._set_status("ouvindo")
             return
 
@@ -315,6 +317,7 @@ class JarvisEngine:
                         break
 
         if not is_command:
+            self._last_process_time = time.time()
             self._set_status("ouvindo")
             return
 
@@ -329,6 +332,7 @@ class JarvisEngine:
             tts.speak("Desculpe, ocorreu um erro.")
             ERROR_SOUND.play()
 
+        self._last_process_time = time.time()
         self._set_status("ouvindo")
 
     def _transcribe(self, audio: np.ndarray) -> str:
