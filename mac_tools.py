@@ -110,27 +110,94 @@ def whatsapp_call(contact_name: str) -> str:
     phone = _resolve_contact(contact_name)
     if not phone.startswith("+"):
         return f"Contato '{contact_name}' não encontrado."
+
     subprocess.run(["open", f"whatsapp://send?phone={phone}"], check=False)
-    apple_script = f'''
-    tell application "WhatsApp"
-        activate
-    end tell
-    delay 1.5
+    subprocess.run(
+        [
+            "osascript",
+            "-e",
+            _WHATSAPP_CALL_SCRIPT,
+        ],
+        check=False,
+    )
+    return f"Iniciando chamada de WhatsApp para {contact_name}."
+
+
+_WHATSAPP_CALL_SCRIPT = '''
+on findAndClick(targetText)
     tell application "System Events"
         tell process "WhatsApp"
             set frontmost to true
-            delay 0.5
+            delay 0.3
+            
+            -- Procura em todos os níveis da hierarchy
             try
-                tell window 1
-                    set callBtn to first button whose description contains "call"
-                    click callBtn
-                end tell
+                set allBtns to every button of every group of every group of every window
+                repeat with btnList in allBtns
+                    repeat with btn in btnList
+                        try
+                            set desc to description of btn
+                            if desc contains targetText then
+                                click btn
+                                return true
+                            end if
+                        end try
+                        try
+                            set title to title of btn
+                            if title contains targetText then
+                                click btn
+                                return true
+                            end if
+                        end try
+                    end repeat
+                end repeat
+            end try
+            
+            -- Procura em toolbars
+            try
+                set tbBtns to every button of every toolbar of every window
+                repeat with btnList in tbBtns
+                    repeat with btn in btnList
+                        try
+                            set desc to description of btn
+                            if desc contains targetText then
+                                click btn
+                                return true
+                            end if
+                        end try
+                    end repeat
+                end repeat
+            end try
+            
+            -- Procura buttons direto na janela
+            try
+                set winBtns to buttons of window 1
+                repeat with btn in winBtns
+                    try
+                        set desc to description of btn
+                        if desc contains targetText then
+                            click btn
+                            return true
+                        end if
+                    end try
+                end repeat
             end try
         end tell
     end tell
-    '''
-    subprocess.run(["osascript", "-e", apple_script], check=False)
-    return f"Iniciando chamada de WhatsApp para {contact_name}."
+    return false
+end findAndClick
+
+tell application "WhatsApp"
+    activate
+end tell
+delay 1.5
+
+-- Tenta em português e inglês
+my findAndClick("chamada")
+my findAndClick("call")
+my findAndClick("audio")
+my findAndClick("voz")
+'''
 
 
 def facetime_call(contact_name: str) -> str:
