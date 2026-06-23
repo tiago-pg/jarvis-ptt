@@ -6,6 +6,7 @@ from pathlib import Path
 
 import rumps
 
+import tts
 from engine import JarvisEngine
 
 ICON_BASE64 = (
@@ -102,11 +103,16 @@ class JarvisStatusBarApp(rumps.App):
             f"{'✓ ' if _login_item_installed() else ''}Iniciar com o Mac",
             callback=self._toggle_startup,
         )
+        self._tts_item = rumps.MenuItem(
+            "✓ Falar respostas",
+            callback=self._toggle_tts,
+        )
 
         self.menu = [
             rumps.MenuItem("Status: Ouvindo...", callback=None),
             None,
             self._startup_item,
+            self._tts_item,
             None,
             rumps.MenuItem("Desligar", callback=self._toggle_listener),
             None,
@@ -147,6 +153,14 @@ class JarvisStatusBarApp(rumps.App):
         else:
             _install_login_item()
             self._startup_item.title = "✓ Iniciar com o Mac"
+
+    def _toggle_tts(self, _):
+        if tts.is_enabled():
+            tts.set_enabled(False)
+            self._tts_item.title = "Falar respostas"
+        else:
+            tts.set_enabled(True)
+            self._tts_item.title = "✓ Falar respostas"
 
     def _toggle_listener(self, _=None):
         if self._listening:

@@ -13,6 +13,7 @@ import requests
 import sounddevice as sd
 
 import agent_router
+import tts
 
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
@@ -21,6 +22,18 @@ ENERGY_THRESHOLD = 0.015
 PRE_ROLL_CHUNKS = 8
 MAX_RECORD_SECONDS = 8
 CHUNK_MS = BLOCKSIZE / SAMPLE_RATE * 1000
+
+def _strip_emojis(text: str) -> str:
+    import re
+    emoji_pattern = re.compile(
+        "[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF"
+        "\U00002702-\U000027B0\U000024C2-\U0001F251"
+        "\U0001F900-\U0001F9FF\U0000200D\u2705\u274C"
+        "\uFE0F]+"
+    )
+    return emoji_pattern.sub("", text).strip()
+
 
 GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 GROQ_STT_MODEL = "whisper-large-v3-turbo"
@@ -290,9 +303,12 @@ class JarvisEngine:
         try:
             result = agent_router.route_command(text)
             self._report_result(result)
+            speak_text = _strip_emojis(result)
+            tts.speak(speak_text)
             DONE_SOUND.play()
         except Exception as exc:
             self._report_error(f"Erro no comando: {exc}")
+            tts.speak("Desculpe, ocorreu um erro.")
             ERROR_SOUND.play()
 
         self._set_status("ouvindo")

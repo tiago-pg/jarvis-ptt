@@ -256,6 +256,40 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "inspect_screen",
+            "description": "Tira um screenshot da tela atual e responde perguntas sobre o que está vendo. Use para 'o que tem na minha tela', 'me resume esse artigo', 'que site é esse', 'me explica esse código'. Não precisa de argumentos além da pergunta.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "Pergunta sobre o conteúdo da tela (ex: 'o que tem nessa página', 'me explica esse gráfico').",
+                    }
+                },
+                "required": ["question"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "speak",
+            "description": "Faz o Jarvis falar em voz alta um texto. Use quando o usuário pedir pra 'falar algo', 'dizer algo' ou 'anunciar'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Texto a ser falado em voz alta.",
+                    }
+                },
+                "required": ["text"],
+            },
+        },
+    },
 ]
 
 TOOL_IMPL = {
@@ -275,6 +309,8 @@ TOOL_IMPL = {
     "send_email": mac_tools.send_email,
     "play_music": mac_tools.play_music,
     "system_status": mac_tools.system_status,
+    "inspect_screen": mac_tools.inspect_screen,
+    "speak": mac_tools.speak,
 }
 
 SYSTEM_PROMPT = (
@@ -285,7 +321,9 @@ SYSTEM_PROMPT = (
     "Para 'ligue para minha mãe' ou 'faz uma ligação para X' use whatsapp_call ou facetime_call. "
     "Se o comando for 'abre o WhatsApp e liga pra minha mãe' então use whatsapp_call('mãe'). "
     "Para 'abre o YouTube no canal do Bistecone' use open_youtube(channel='bistecone'). "
-    "Normalize nomes de app (ex: 'vscode' -> 'Visual Studio Code'). "
+    "Se o usuario perguntar sobre o que esta na tela, use inspect_screen. "
+"Se o usuario pedir pra falar algo em voz alta, use speak. "
+"Normalize nomes de app (ex: 'vscode' -> 'Visual Studio Code'). "
     "Se o comando não corresponder a nenhuma ferramenta, não chame nada - o sistema ignorará. "
     "NUNCA responda em texto - apenas retorne as chamadas de ferramenta."
 )

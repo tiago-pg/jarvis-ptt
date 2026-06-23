@@ -238,3 +238,14 @@ def system_status() -> str:
                 battery = line.strip()
                 break
     return f"Bateria: {battery}"
+
+
+def speak(text: str) -> str:
+    import tts as _tts
+    _tts.speak(text)
+    return f"Falei: {text}"
+
+
+def inspect_screen(question: str) -> str:
+    import vision as _vision
+    return _vision.analyze_screen(question)
