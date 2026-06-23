@@ -17,7 +17,7 @@ import tts
 
 SAMPLE_RATE = 16000
 BLOCKSIZE = 512
-SHORT_SILENCE_MS = 700
+SHORT_SILENCE_MS = 1200
 MEDIUM_SILENCE_MS = 2500
 LONG_SILENCE_MS = 4500
 SHORT_SWITCH_SECONDS = 5
@@ -279,8 +279,14 @@ class JarvisEngine:
                     command_text = rest
                     is_command = True
                     break
+                else:
+                    print(f"[Wake word '{w}' detectado sem comando]")
+                    self._last_process_time = time.time()
+                    self._set_status("ouvindo")
+                    return
 
         if not is_command:
+            print(f"[Transcricao ignorada: '{text}']")
             self._last_process_time = time.time()
             self._set_status("ouvindo")
             return
