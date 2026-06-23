@@ -203,6 +203,8 @@ class JarvisEngine:
 
             self._pre_roll.append(mono.copy())
 
+            now = time.time()
+
             if self._oww_model:
                 self._oww_buffer = np.concatenate([self._oww_buffer, mono.astype(np.float64)])
                 while len(self._oww_buffer) >= 1280:
@@ -211,14 +213,14 @@ class JarvisEngine:
                     pred = self._oww_model.predict(chunk)
                     score = pred.get("hey_jarvis", 0)
                     if score > 0.01:
-                        print(f"[OWW] score: {score:.3f}")
+                        print(f"[OWW] score: {score:.4f}")
                     if score >= 0.2:
                         print(f"[WakeWord] Jarvis detectado! (score: {score:.2f})")
-                        self._oww_buffer = np.array([], dtype=np.float64)
                         self._on_wake_detected()
+                        self._oww_buffer = np.array([], dtype=np.float64)
                         return
+                return
 
-            now = time.time()
             if rms >= ENERGY_THRESHOLD and (now - self._last_process_time) > COOLDOWN_SECONDS:
                 print(f"[VAD] Fala detectada (rms: {rms:.4f})")
                 self._on_wake_detected()
